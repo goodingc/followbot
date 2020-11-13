@@ -43,6 +43,14 @@ class Follower:
         @return: A boolean image where input pixels that are green are marked True in the output image and all others
         are marked False.
         """
+        
+        HSV_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV) # Convert RGB image to HSV colour space
+        Low_HSV = np.array([50,0,0],dtype='uint8') # Bottom end of green hue range
+        High_HSV = np.array([70,255,255],dtype='uint8') # Top end of green hue range
+        
+        Thresholded_Image = cv2.inRange(HSV_image, Low_HSV, High_HSV) # Apply thresholding to convert to boolean image (white pixels = green object, black = background)
+
+        return Thresholded_Image
 
     def find_beacon(self, mask):
         """
