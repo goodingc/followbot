@@ -73,6 +73,7 @@ class Follower:
         Moves the robot forwards in the direction of the beacon using the offset angle.
         @param angle_offset: The angle offset between the front of the robot and the beacon
         """
+        self.pub.publish(Twist(Vector3(0.1, 0, 0), Vector3(0, 0, -angle_offset * 0.3)))
 
     def wander(self):
         """
@@ -103,6 +104,16 @@ class Follower:
         Should also handle setting self.wandering to False after changing from wandering behaviour to homing behaviour.
         @return:
         """
+        if self.image is None or self.camera_matrix is None or self.image_width is None:
+            return
+        mask = self.mask_image(self.image)
+        beacon_coords = self.find_beacon(mask)
+        if beacon_coords is None:
+            self.wander()
+            return
+        self.wandering = False
+        angle_offset = self.angle_offset(beacon_coords)
+        self.move_robot(angle_offset)
 
     def handle_image(self, msg):
         """
@@ -119,6 +130,8 @@ class Follower:
         Sets self.camera_matrix as the 3x3 camera matrix from msg.
         @param msg: The message received on the camera/rgb/camera_info topic
         """
+        self.image_width = msg.width
+        self.camera_matrix = np.reshape(msg.K, (3, 3))
 
     def handle_odom(self, msg):
         """
