@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import cv2, math
 from random import random
-
+from math import radians, atan2
 import cv_bridge
 import numpy as np
 import rospy
@@ -63,6 +63,10 @@ class Follower:
         @param beacon_coords: The screen-space coordinates of the beacon
         @return: The angle offset between the front of the robot and the beacon
         """
+        diff_x = beacon_coords[0] - self.x
+        diff_y = beacon_coords[1] - self.y
+        return atan2(diff_y, diff_x)
+
 
     def move_robot(self, angle_offset):
         """
@@ -76,6 +80,22 @@ class Follower:
         The value of self.wandering should be False for the first time this is called after having performed homing
         behaviour and then True for all times after that.
         """
+        #declaring linear velocity
+        forward_vel = Twist()
+        forward_vel.linear.x = 0.4
+        #declaring angular velocity
+        angular_vel = Twist()
+        angular_vel.linear.x = 0
+        angular_vel.angular.z = radians(45)
+        rand_direc = random.randint(0, 80)
+        for n in range(0, 75):#moves forward 3 meters in 7.5 seconds
+            self.pub.publish(forward_vel)
+            self.avoid()
+            self.rate_limiter.sleep()
+        #turns for a random time between(0, 80) which is ewuivelat to turning between(0 dgrees - 360 degrees)
+        for n in range(rand_direc):
+            self.pub.publish(angular_vel)
+            self.rate_limiter.sleep()
 
     def tick_handler(self):
         """
@@ -89,6 +109,9 @@ class Follower:
         Sets self.image with the value of the BGR encoded image from msg
         @param msg: The message received on the camera/rgb/image_raw topic
         """
+        self.image = self.bridge.imgmsg_to_cv2(msg,desired_encoding='bgr8')
+        cv2.imshow("window",self.image)
+        cv2.waitKey(3)
 
     def handle_camera_info(self, msg):
         """
@@ -102,6 +125,32 @@ class Follower:
         Sets self.[theta, x, y] as their respective values parsed from msg
         @param msg: The message received on the odom topic
         """
+         quarternion = [msg.pose.pose.orientation.x,msg.pose.pose.orientation.y,\
+                    msg.pose.pose.orientation.z, msg.pose.pose.orientation.w]
+        (roll, pitch, yaw) = tf.transformations.euler_from_quaternion(quarternion)
+
+        self.x = msg.pose.pose.position.x
+        self.y = msg.pose.pose.position.y
+        self.theta = yaw
+    
+    def handle_sensor(self, msg):
+        self.f = msg.ranges[0]
+        self.r = msg.ranges[250]
+        self.l = msg.ranges[70]
+        msg.range_max = self.front_range
+
+    def avoid(self):
+        angular_vel_r = Twist()
+        angular_vel_r.linear.x = 0
+        angular_vel_r.angular.z = radians(90)
+        angular_vel_l = Twist()
+        angular_vel_l.linear.x = 0
+        angular_vel_l.angular.z = radians(-90)
+        b = self.r > self.l
+        while self.f < self.front_range:
+            ang_vel = (angular_vel_l if b==True else angular_vel_r)
+            self.pub.publish(ang_vel)
+            self.rate_limiter.sleep()
 
 
 Follower().run()
