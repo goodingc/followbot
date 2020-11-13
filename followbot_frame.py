@@ -43,8 +43,8 @@ class Follower:
         @return: A boolean image where input pixels that are green are marked True in the output image and all others
         are marked False.
         """
-        
-        HSV_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV) # Convert RGB image to HSV colour space
+
+        HSV_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV) # Convert BGR image to HSV colour space
         Low_HSV = np.array([50,0,0],dtype='uint8') # Bottom end of green hue range
         High_HSV = np.array([70,255,255],dtype='uint8') # Top end of green hue range
         
@@ -57,6 +57,17 @@ class Follower:
         @param mask: A boolean image where the color or the beacon is True
         @return: The screen-space coordinates of the center of the beacon to home towards
         """
+        Image, Contours, Hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE) # Extract contours (edges) from binary image
+
+        if len(Contours) == 0: # Exit if no contours (edges) found in binary image
+            return
+
+        Moments = cv2.moments(Contours[np.argmax(map(cv2.contourArea, Contours))]) # Calculate moments from largest found contours
+
+        X_Pos = Moments["m10"] / Moments["m00"] # Calculate X position of centroid from moments
+        Y_Pos = Moments["m01"] / Moments["m00"] # Calculate Y position of centroid from moments
+
+        return [X_Pos,Y_Pos]
 
     def angle_offset(self, beacon_coords):
         """
