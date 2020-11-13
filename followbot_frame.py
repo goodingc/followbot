@@ -80,9 +80,12 @@ class Follower:
         @param beacon_coords: The screen-space coordinates of the beacon
         @return: The angle offset between the front of the robot and the beacon
         """
-        diff_x = beacon_coords[0] - self.x
-        diff_y = beacon_coords[1] - self.y
-        return atan2(diff_y, diff_x)
+        center_projection = np.matmul(np.linalg.inv(self.camera_matrix),
+                                      np.array([beacon_coords[0], beacon_coords[1], 1]))
+
+        half_fov = math.atan2(self.image_width, 2 * self.camera_matrix[0, 0])
+
+        return math.atan(center_projection[0] * math.tan(half_fov))
 
     def move_robot(self, angle_offset):
         """
