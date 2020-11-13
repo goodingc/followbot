@@ -32,7 +32,7 @@ class Follower:
         self.bridge = cv_bridge.CvBridge()
         rospy.Subscriber('camera/rgb/image_raw', Image, self.handle_image)
         rospy.Subscriber('camera/rgb/camera_info', CameraInfo, self.handle_camera_info)
-        rospy.Subscriber('scan', LaserScan, handle_scan)
+        rospy.Subscriber('scan', LaserScan, self.handle_sensor)
         rospy.Subscriber('odom', Odometry, self.handle_odom)
         self.pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
 
