@@ -188,7 +188,7 @@ class Follower:
             return
 
 
-        if self.f < 0.2:
+        if self.f < 0.35:
             if self.switch_target == False:
                 print('Found green Object\n')
             else:
