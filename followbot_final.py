@@ -271,7 +271,7 @@ class Follower:
         angular_vel_l = Twist()
         angular_vel_l.linear.x = 0
         angular_vel_l.angular.z = radians(-90)
-        b = self.r > self.l
+        b = self.r < self.l
         while self.f < self.front_range:
             ang_vel = (angular_vel_l if b is True else angular_vel_r)
             self.pub.publish(ang_vel)
